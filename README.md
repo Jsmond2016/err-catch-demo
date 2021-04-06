@@ -749,12 +749,10 @@ module.exports = class StackParser {
 };
 ```
 
+- 测试准备：先将 `/upload` 内的 `.map` 文件拷贝到 `app/utils/__test__` 目录中
 - 测试用例：
 
 ```js
-// 如何通过sourcemap手工还原错误具体信息？ https://www.zhihu.com/question/285449738
-// /app/utils/__test__/stackparser.test.js
-
 // 如何通过sourcemap手工还原错误具体信息？ https://www.zhihu.com/question/285449738
 // /app/utils/stackparser.spec.js
 'use strict';
@@ -763,7 +761,6 @@ const StackParser = require('../stackparser');
 
 // const { resolve } = require('path');
 // const { hasUncaughtExceptionCaptureCallback } = require('process');
-
 
 const error = {
   stack: 'ReferenceError: abc is not defined\n' +
@@ -784,6 +781,7 @@ const error = {
 
 it('test==========>', async () => {
   const stackParser = new StackParser(__dirname);
+  // console.log('path', path.basename(__dirname));
   // console.log('Stack:', error.stack);
   const stackFrame = stackParser.parseStackTrack(error.stack, error);
   stackFrame.map(v => {
@@ -793,21 +791,32 @@ it('test==========>', async () => {
 
   const originStack = await stackParser.getOriginalErrorStack(stackFrame);
 
-  console.log('originStack', originStack);
+  console.log('originStack=======>0', originStack[0]);
 
   // 断言，需要手动修改下面的断言信息，只测试第 0 个例子
   // eslint-disable-next-line no-undef
   expect(originStack[0]).toMatchObject({
-    columnNumber: 606,
-    lineNumber: 1,
-    fileName: 'http://127.0.0.1:8080/js/app.c82461cf.js',
-    functionName: 'Proxy.mounted',
-    source: '    at Proxy.mounted (http://127.0.0.1:8080/js/app.c82461cf.js:1:606)',
+    line: 15,
+    column: 8,
+    name: 'abc',
+    source: 'webpack://front/src/components/HelloWorld.vue',
   });
 });
 
+
 ```
 
+这里，我们可以看到，我们需要通过 压缩后的代码报错信息还原成的 `sourceMap` 对应的文件路径和代码行数等详细信息：
+
+```js
+{
+    line: 15,
+    column: 8,
+    name: 'abc',
+    source: 'webpack://front/src/components/HelloWorld.vue',
+}
+```
+ 
 - 测试
 
 ```bash
@@ -815,6 +824,15 @@ cd backend/app/utils
 
 npx jest stackparser --watch
 ```
+
+显示测试用例通过，测试，我们就完成了：
+
+- 前端常见异常上报服务端
+- 服务端通过 `sourceMap` 文件进行错误场景还原：错误代码所在文件和行数
+
+此时，我们就可以精准定位错误代码了。
+
+以上~~~
 
 - 代码： [error-catch-demo](https://github.com/Jsmond2016/err-catch-demo)
 

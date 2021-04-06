@@ -30,8 +30,10 @@ module.exports = class StackParser {
 
   // 从 sourceMap 文件读取错误信息
   async getOriginPosition(stackFrame) {
+    // console.log('stackFrame: ', stackFrame);
     let { columnNumber, lineNumber, fileName } = stackFrame;
     fileName = path.basename(fileName);
+    // console.log('fileName: ', fileName);
     // 判断 consumers 是否存在
     let consumer = this.consumers[fileName];
     if (!consumer) {
@@ -47,7 +49,7 @@ module.exports = class StackParser {
       this.consumers[fileName] = consumer;
     }
 
-    const parseData = consumer.originalPositionFor({ line: lineNumber, columnNumber });
+    const parseData = consumer.originalPositionFor({ line: lineNumber, column: columnNumber });
     return parseData;
 
   }
